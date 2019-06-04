@@ -1,0 +1,49 @@
+#!/usr/bin/bash
+# $Heading: $
+[[ -z $1 ]] && printf "
+Usage: `basename $0` [Message to display in the event log]
+
+Displays a message item in the log file headed by the name of the message
+originator. Anyone tailing the log file is able to see the message.
+It is also used to punctuate events for later reference.
+
+The log directory and the log file can be configured in this script.
+
+By default the name of the message originator is the UNIX login name, which
+is mostly held in the environment variable \$LOGNAME. If you want to override
+this name in your session (possiby because you are sharing an environment
+with others), you can set the variable \$USER to your name, e.g.
+  $ export USER=\"My Name\"
+
+Achtung: Do not use special UNIX characters in the message, i.e. ',\$,\",\`,*,#,|,<,>,\\
+         - unless you escape them or put double-quotes around the message, e.g.
+           $ `basename $0` That\'s all, folks!
+         or
+           $ `basename $0` \"That's all, folks!\"
+
+         You can force a new line only with the newline sequence \"\\\n\", e.g.
+           $ `basename $0` \"Line 1\\\nLine 2\"
+
+" && exit 1
+
+# One-Off Configuration:
+LOGDIR=$APP_HOME/log
+LOGFILE=$LOGDIR/events
+# End of configuration
+
+[[ ! -d $LOGDIR ]] && printf "The $LOGDIR directory does not exist. Please create it.
+Exiting...
+" && exit 1
+
+[[ ! -a $LOGFILE ]] && touch $LOGFILE
+[[ ! -w $LOGFILE ]] && printf "The $LOGFILE log file is not writable.
+Exiting...
+" && exit 1
+
+[[ -z $LOGNAME ]] && LOGNAME=$(id | awk '{print $1}' | sed -e 's/.*(//g' -e 's/).*//g')
+[[ -z $USER ]] && USER=$LOGNAME
+echo "-- Message from ${USER}: `date` --" >> $LOGFILE
+echo "$@"  >> $LOGFILE
+echo "-- End of Message --" >> $LOGFILE
+
+printf "Message posted to the file $LOGFILE.\n"

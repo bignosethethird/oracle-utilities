@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Global parameters
+ROTATIONS=35
+LOGFILE=events
+
+if [[ $1 = "--help" || $1 = "-h" ]] ; then
+  printf "Usage `basename $0`
+Function:
+  Renames the current log file \$APP_HOME/log/$LOGFILE to $LOGFILE.1 and creates
+  a new events file with the same attributes as the original. The exisitng
+  events.1 file is moved to events.2 etc., up to a maximum of $ROTATIONS such files.
+  When file events.$ROTATIONS is rotated, it is removed. In addition, the rotated
+  events files are gzipped. The rotated files are kept in the same directory
+  as the original file.
+
+  This script should ideally be called once per day, preferably near the end
+  of the day.
+
+  Use this when the logrotate daemon is not installed on the system.
+
+Parameters:
+  None.
+
+Notes:
+  The advisory file locking system 'flock' is used during rotation.
+  Not all processes that write to the event file consider this locking
+  and it is likely that a process creates an events file with its own user
+  attributes, which may prevent file rotation.
+"
+  exit 1
+fi
+
+
+# Get environment specs
+
+# Get APP_HOME specs
+if [[ -z $APP_HOME ]]; then
+  # Make up APP_HOME from the directory that this script is running in
+  # Assume that it is running from $APP_HOME/bin
+  BIN_DIR=$(which `basename $0`)
+  APP_HOME=${BIN_DIR%%/bin/`basename $0`}
+fi
+[[ -z $APP_HOME ]] && printf "\$APP_HOME is not defined in this environment.\nExiting..." && exit 1
+
+# Get PERL specs
+# Note:
+# We need to do this here because this is an environment-specific installation
+# of Perl. Make PERL=$(which perl) is the O/S based Perl installation is used.
+[[ -x $APP_HOME/bin/perl ]] && PERL=$APP_HOME/bin/perl
+[[ -z $PERL ]] && PERL=$(which perl)
+[[ -z $PERL ]] && printf "Perl is not defined in this environment.\nExiting..." && exit 1
+LD_LIBRARY_PATH=$APP_HOME/lib:LD_LIBRARY_PATH
+PERL5LIB=$APP_HOME/lib/5.8.6
+
+PATH=$APP_HOME/bin:$PATH
+
+# Message in case of someone viewing this file, e.g. tail -f events
+printf "
+******************************************************************************
+* This log file, $APP_HOME/log/$LOGFILE, that you are currently vieweing
+* is about to be rotated. The content will be moved to
+* $APP_HOME/log/$LOGFILE.1.gz. If you are currently viewing this file,
+* then you should now re-open the file with your file viewer.
+******************************************************************************
+" >> $APP_HOME/log/$LOGFILE
+
+sleep 5 # Wait for message to take effect in Viewer.
+
+$PERL -e '
+use strict;
+use Env;
+use Logfile::Rotate;
+my $APP_HOME =shift||"/app/vcr";
+my $ROTATIONS=shift||35;
+my $LOGFILE=shift||"events";
+print "Rotating $APP_HOME/log/$LOGFILE for a maximum of $ROTATIONS rotations.\n";
+my $log = new Logfile::Rotate( File    => "$APP_HOME/log/$LOGFILE",
+                               Count   => $ROTATIONS,
+                               Gzip    => "gzip",
+                               Flock   => "yes",
+                               Persist => "yes");
+$log->rotate();
+' $APP_HOME $ROTATIONS $LOGFILE
+
+RETCODE=$?
+
+[[ $RETCODE -ne 0 ]] && printf "Could not rotate $APP_HOME/log/events. Error code $RETCODE.\nExiting..." && exit 1
+printf "Successfully rotated the file $APP_HOME/log/$LOGFILE.\n";
+
+

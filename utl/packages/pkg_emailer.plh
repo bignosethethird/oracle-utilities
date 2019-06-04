@@ -1,0 +1,34 @@
+CREATE OR REPLACE PACKAGE utl.pkg_emailer AS
+  ------------------------------------------------------------------------
+  --------------------------------------------------------------------------
+  --  A package to send emails
+  --------------------------------------------------------------------------
+
+  -- global constants for config table keys related to properties used by this package
+  gc_smtp_server_config_key      CONSTANT VARCHAR2(30) := 'email.smtp_server';
+  gc_smtp_server_port_config_key CONSTANT VARCHAR2(30) := 'email.smtp_server_port';
+  gc_domain_name_config_key      CONSTANT VARCHAR2(30) := 'email.domain_name';
+  gc_default_sender_config_key   CONSTANT VARCHAR2(30) := 'email.default_sender';
+  gc_no_of_retries_config_key    CONSTANT VARCHAR2(30) := 'email.no_of_retries';
+  gc_max_attach_size_config_key  CONSTANT VARCHAR2(30) := 'email.max_attachment_size';
+
+  -- procedure to send an email optionally with a single attachment 
+  -- p_sender is optional, if not provided value for email.default_sender config property
+  -- p_recipients is a list of email addresses  separated by either a "," or a ";"
+  -- The format of an email address is one of these:
+  --   someone@some-domain
+  --   "Someone at some domain" <someone@some-domain>
+  --   Someone at some domain <someone@some-domain>
+  -- if p_attachment is not null this is attached as a file with the name p_attachment_name
+  -- if p_attachment2 is not null this is attached as a file with the name p_attachment2_name
+  PROCEDURE send(p_sender          IN VARCHAR2,
+                 p_recipients      IN VARCHAR2,
+                 p_subject         IN VARCHAR2,
+                 p_body            IN VARCHAR2,
+                 p_attachment_name IN VARCHAR2 DEFAULT NULL,
+                 p_attachment      IN CLOB DEFAULT NULL,
+                 p_attachment2_name IN VARCHAR2 DEFAULT NULL,
+                 p_attachment2      IN CLOB DEFAULT NULL);
+
+END pkg_emailer;
+/

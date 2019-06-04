@@ -1,0 +1,93 @@
+#!/bin/bash
+# Adds some further enhancements to the 'oerr' program from Oracle and
+# allows our own application errors and UNIX error codes to be included.
+
+
+FACILITIES="ora exp imp kup sql*loader dbv nid lcd qsm rman lrm lfi pls amd tns nnc nno nnl npl nnf nmp ncr nze mod o2f o2i o2u pcb pcf pcc sql aud img vid drg lpx lsx epc sp2"
+
+if [[ -z $1 ]] ; then
+  printf "Usage: `basename $0` [Facility] ErrorCode
+The facility can be one of the following, for which a corresponding message
+file needs to exist in the \$ORACLE_HOME/rdbms/mesg directory:
+  "
+  COUNT=0
+  for i in $FACILITIES; do
+    COUNT=$((COUNT+1))
+    printf "$i, "
+    [[ $((COUNT%4)) -eq 0 ]] && printf "\n  "
+  done
+  printf "
+If no facility is specified, then the 'ora' facility is assumed.
+The error code is assumed to be a positive code unless it is prefixed
+with a -'ve sign. If no positive error code description can be found
+then an error code with a -'ve sign is assumed.
+"
+  exit 1
+fi
+
+# Check if facility is specified (non-POSIX version of SED used here)
+if [[ ! -z $1 && ! -z $2 ]]; then
+  # Get & clean params
+  FACILITY=$(echo $1 | tr -s '[:upper:]' '[:lower:]')
+  ERRORCODE=$(echo $2 | sed -e 's/[a-zA-Z\*]//g')
+
+  # Check if required facility is in list
+  FOUND=FALSE
+  for i in $FACILITIES; do
+    [[ $FACILITY = $i ]] && FOUND="TRUE" && break
+  done
+  [[ $FOUND = "FALSE" ]] && printf "Invalid facility specified. Is should be one of\n$FACILITIES.\nExiting...\n" && exit 1
+  # Check if 2nd parameter is error code
+  [[ -z $ERRORCODE ]] && printf "An invalid error code was specified.\nExiting...\n" && exit 1
+else
+  # Only 1 parameter specified. Assume FACILITY = 'ora'
+  FACILITY="ora"
+  # Check if 1st parameter is proper error code
+  ERRORCODE=$(echo $1 | sed -e 's/[a-zA-Z\*]//g')
+  [[ -z $ERRORCODE ]] && printf "An invalid error code was specified.\nExiting...\n" && exit 1
+fi
+
+RETCODE=1
+if [[ $FACILITY = "ora" ]]; then
+  # Look up in the VCR error code table since all 'ora' facility messages are stored there
+  # Any unknown error codes will be looked up on the actual Oracle installation using the
+  # supplied Oracle oerr command.
+  sqlplus -s / <<!
+set feedback off
+set serveroutput on size 100000
+var msg varchar2(200)
+var exp varchar2(1000)
+var i number
+declare
+  code pls_integer:=$ERRORCODE;
+begin
+  scheduler.scheduler_con.dump_error_details(code);
+  :i:=0;
+exception
+  when others then
+    :i:=1;
+end;
+/
+quit :i
+!
+  RETCODE=$?
+fi
+
+if [[ $RETCODE -ne 0 ]]; then
+  # Error code not found or facility other than ora specified
+  if [[ -z $ORACLE_HOME ]]; then
+    printf "\$ORACLE_HOME is not defined. Cannot find error code explanation.\nExiting...\n"
+    exit 1
+  else
+    # Get error message from Oracle core utility and clean up a little:
+    EXP=$($ORACLE_HOME/bin/oerr $FACILITY $ERRORCODE | sed -e 's/^\/\/ //g' -e 's/\\n//g')
+    if [[ -z $EXP ]]; then
+      printf "No explanation for facility $FACILITY, code $ERRORCODE is available.\n"
+    else
+      printf "$EXP\n"
+      RETCODE=0
+    fi
+  fi
+fi
+
+exit $RETCODE

@@ -1,0 +1,195 @@
+create or replace package 
+------------------------------------------------------------------------
+--  Current Revision:
+--
+--
+--  Revision History:
+--
+--	$log$
+--------------------------------------------------------------------------
+--  String and String Array functions
+------------------------------------------------------------------------
+    utl.pkg_string
+as
+
+pc_package                        constant varchar2(30)    := 'pkg_string';
+pc_schema                         constant varchar2(30)    := 'utl';
+
+gc_single_quote                   constant varchar2(1) := '''';     -- Single quote
+gc_double_quote                   constant varchar2(2) := '''''';   -- Double quote
+gc_space                          constant varchar2(1) := ' ';      -- Space
+gc_comma                          constant varchar2(1) := ',';      --
+gc_ampersand                      constant varchar2(1) := chr(38);  -- The character that we do not type in PLSQL
+gc_tab                            constant varchar2(1) := chr(9);   -- Tab
+gc_nl                             constant varchar2(1) := chr(10);  -- "new line" character
+gc_cr                             constant varchar2(1) := chr(13);  -- "carriage return" character
+gc_crlf                           constant varchar2(2) := chr(13)||chr(10);  -- "carriage return / line feed" string
+
+------------------------------------------------------------------------
+-- Double up quotes and wrap with two more single quotes.
+-- A null ends up as '', or 'NULL' if p_null_text is TRUE
+procedure enquote(p_string in out  varchar2, p_null_text in boolean := false);
+function  enquote(p_string in  varchar2, p_null_text in boolean := false) return varchar2;
+
+------------------------------------------------------------------------
+-- Removes all quotes from a string
+procedure dequote(p_string in out varchar2, p_inside_string in boolean := false);
+function dequote(p_string in varchar2, p_inside_string in boolean := false) return varchar2;
+
+------------------------------------------------------------------------
+-- Remove last trailing X (default 1) chars from string, regardless of whether it is a char or new line
+procedure chop(p_string in out varchar2,p_number in number := 1);
+
+------------------------------------------------------------------------
+-- Remove trailing new-line chars from string
+procedure chomp(p_string in out varchar2);
+
+
+------------------------------------------------------------------------
+-- Parses a comma-separated list into a table of varchar
+-- and dequotes string elements
+function string2list(p_string in varchar2,p_separator in varchar2:=gc_comma) return dbms_sql.varchar2s;
+
+------------------------------------------------------------------------
+-- Makes a varchar2 list into a comma-separated string
+function list2string(p_list in dbms_sql.varchar2s, p_separator in varchar2:=',') return varchar2;
+-- Makes a number list into a comma-separated string
+function numlist2string(p_list in dbms_sql.number_table, p_separator in varchar2:=',') return varchar2;
+
+------------------------------------------------------------------------
+-- Parses a comma-separated list into a table of varchar
+-- and dequotes string elements
+function string2varchar2_table(p_string in varchar2,p_separator in varchar2:=gc_comma) return dbms_sql.varchar2_table;
+
+-- Parses a comma-separated list into a table of numbers
+-- Any non-numeric items will be ignored
+function string2number_table(p_string in varchar2,p_separator in varchar2:=gc_comma) return dbms_sql.number_table;
+-- Oracle 10g ONLY!
+-- function string2binary_double_table(p_string in varchar2,p_separator in varchar2:=gc_comma) return dbms_sql.binary_double_table;
+
+------------------------------------------------------------------------
+-- Makes a table into a comma-separated string
+function table2string(p_table in dbms_sql.varchar2_table, p_separator in varchar2:=',') return varchar2;
+function numtable2string(p_table in dbms_sql.number_table,   p_separator in varchar2:=',') return varchar2;
+
+----------------------------------------------------------------------------
+-- Converts a table to a ref cursor / recordset
+function table2recordset(p_table in  dbms_sql.varchar2_table,
+         p_resultset out UTL.global.t_result_set) return utl.global.t_error_code;
+--function table2recordset(p_table in  dbms_sql.number_table,
+--         p_resultset out UTL.error.t_result_set) return UTL.error.t_error_code;
+
+------------------------------------------------------------------------
+-- Breaks up the long input string into nice chunks of specified length
+-- in a string table dbms_sql.varchar2s.
+-- Attempts to break on white space between words. If no white space
+-- or resulting string is about to become to short, then hard-break on
+-- required line width.
+--
+-- Usage: v_lines:=1; v_retcode:=break_string(v_sql,v_list_sql,v_lines):
+-- dbms_output.put_lines(v_lines||' were output.');
+function break_string(
+  p_string                in   varchar2,                        -- The long string to break up
+  p_strings               in   out  nocopy dbms_sql.varchar2s,  -- String table
+  p_line_count            in   out  pls_integer,                -- Start point in string table, usually 1.
+                                                                -- Resturns the final number of strings in the string table.
+  p_prolog                in   varchar2:=null,                  -- Add this in front of every string
+  p_width                 in   integer := 60                    -- Desired string width
+)
+return global.t_error_code;
+
+-- Breaks up the long input string into nice chunks of specified length
+-- and spearates each chunk with the indicated separator string - usually
+-- a carriage return.
+function break_string(
+  p_string                in   varchar2,                        -- The long string to break up
+  p_separator             in   varchar2:=chr(10),               -- String separator
+  p_width                 in   integer := 60                    -- Desired string width
+) return varchar2;
+
+
+------------------------------------------------------------------------
+-- Dumps the contents of the table to the indicated file path.
+-- If file is not indicated, a timestamped filename in the directory
+-- specified in the System Variable "Dump Path" will be created, and the
+-- contents will be written to it.
+-- The parameter p_file_name must be a fully qualified file and path name.
+-- Note:
+-- The path (wether specified on the command line or in the parameter directory),
+--  must also exist in the INIT.ORA file, in the form:
+-- UTL_FILE_DIR=[OS file directory name]
+-- TODO:
+-- Use BFILE declaration instead.
+procedure table2file(p_table in dbms_sql.varchar2s,    p_file_name in varchar2 := null);
+procedure numtable2file(p_table in dbms_sql.number_table, p_file_name in varchar2 := null);
+
+------------------------------------------------------------------------
+-- Is this char whitespace? (space, tab, newline, carriage-return)
+function is_whitespace(p_char in varchar2)return boolean;
+
+-- Cleans string for query
+-- Removes non-alpha numeric characters, except for the '%','*' and '?',
+-- which may have been entered as wild card characters.
+-- Makes the string input string UPPER CASE and removes leading and trailing spaces.
+function clean4query(p_string    in  varchar2) return varchar2;
+
+-- Cleans alpha-numerical string
+function clean4alphanum(p_string    in  varchar2) return varchar2;
+
+-- Cleans for an alphabetical string only
+function clean4alpha(p_string    in  varchar2) return varchar2;
+
+-- Cleans an input string by stripping all non-numbers
+-- Keeps decimal points and commas
+function clean4numbers(p_string    in  varchar2) return varchar2;
+
+------------------------------------------------------------------------
+-- Convert an integer to spoken text
+function int2text(p_integer in pls_integer) return varchar2;
+
+-------------------------------------------------------------------------------
+-- Create a string of same characters
+-- (surely there has to be a native Oracle function for this?)
+function same_charstring(p_char in char, p_length in pls_integer) return varchar2;
+
+-------------------------------------------------------------------------------
+-- Count the number of occurances of a substring in a string
+function substr_count(p_string in varchar2, p_substr in varchar2) return pls_integer;
+
+-------------------------------------------------------------------------------
+--  Attempts to extract the first encountered numeric value from the string
+--  starting at the point indicated by p_current_pos.
+--  Returns:    TRUE if numeric value was found. 
+--                p_current_pos is updated to end of the found number.
+--              FALSE if no numeric value found
+--                p_current_pos is undefined
+--  TODO: Detect numbers represented in scientific format.
+--  TODO: Use RegEx to save huge ammounts of troubles
+function parse_number(
+  p_string                  in        varchar2,       -- Input string
+  p_current_pos             in out    pls_integer,    -- Entry and Exit point
+  p_number                  out       number,         -- Resulting number
+  p_length                  out       number          -- Length of resulting string holding number
+)return boolean;
+
+-- Returns a string containing only unique characters that occurred in the 
+-- input string. 
+-- NOTE: Character order is not preserved - the characters are returned
+--       in NLS order.
+-- Maximum string length is ca. 2900. 
+-- Characters beyond this limit are quietly ignored.
+function dedupe_string(p_string in varchar2)
+return varchar2;
+
+-- Converts a string to legal HTML code
+-- Replaces all characters that could be interpreted as HTML command 
+-- with HTML character codes
+-- By default, end-of-line chars are translated into <br> tags
+function string2html(p_string in varchar2, p_translate_eol in boolean:=true)
+return varchar2;
+
+end pkg_string;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

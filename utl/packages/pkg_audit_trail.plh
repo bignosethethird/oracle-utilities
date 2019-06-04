@@ -1,0 +1,50 @@
+CREATE OR REPLACE PACKAGE utl.pkg_audit_trail IS
+  -------------------------------------------------
+  -------------------------------------------------
+  -- Package for the querying of audit trail entries
+  -------------------------------------------------
+  
+  gc_action_insert CONSTANT audit_trail.action%TYPE := 'INSERT';
+  gc_action_update CONSTANT audit_trail.action%TYPE := 'UPDATE';  
+  gc_action_delete CONSTANT audit_trail.action%TYPE := 'DELETE';
+  
+  -- get a count of audit trail entries, optionally for
+  --     p_user_id
+  --     p_object
+  --     p_from_date   -- between two dates
+  --     p_to_date
+ 
+  FUNCTION get_count(p_user_id     IN audit_trail.user_id%TYPE,
+                     p_object      IN audit_trail.object%TYPE,
+                     p_from_date   IN DATE,
+                     p_to_date     IN DATE) RETURN INTEGER;
+  
+  -- get a result set of audit trail entries, optionally for
+  --     p_user_id
+  --     p_object
+  --     p_from_date   -- between two dates
+  --     p_to_date
+  -- returns a result set
+  --     utl.audit_trail.date_time "Date/Time"
+  --     utl.audit_trail.action "Action"
+  --     utl.audit_trail.user_id "User"
+  --     utl.audit_trail.object "Object"
+  --     utl.audit_trail.before_image "Before Image"
+  --     utl.audit_trail.after_image "After Image"
+  --     utl.audit_trail.reason "Reason"
+  -- ordered by date_time descending
+  FUNCTION get_list(p_user_id     IN audit_trail.user_id%TYPE,
+                    p_object      IN audit_trail.object%TYPE,
+                    p_from_date   IN DATE,
+                    p_to_date     IN DATE) RETURN utl.global.t_result_set;
+             
+  -- get a count or result set of users who have created audit trail entries
+  FUNCTION get_user_dropdown_count RETURN INTEGER;
+  FUNCTION get_user_dropdown_list RETURN utl.global.t_result_set;
+  
+  -- get a count or result set of objects for which there are audit trail entries
+  FUNCTION get_object_dropdown_count RETURN INTEGER;
+  FUNCTION get_object_dropdown_list RETURN utl.global.t_result_set;
+  
+END pkg_audit_trail;
+/

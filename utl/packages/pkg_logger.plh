@@ -1,0 +1,92 @@
+create or replace package utl.pkg_logger as
+------------------------------------------------------------------------
+--------------------------------------------------------------------------
+--  Write log information (e.g. errors and events) to a log_mesage table
+------------------------------------------------------------------------
+
+--===========================================================================--
+-- GLOBAL SYSTEM-WIDE CONSTANTS
+--===========================================================================--
+  pc_package            constant varchar2(30):=  'pkg_logger';
+  pc_schema             constant varchar2(30):=  'utl';
+
+  -- Log levels
+  gc_loglevel_none      constant pls_integer:=0;
+  gc_loglevel_basic     constant pls_integer:=1;
+  gc_loglevel_vebose    constant pls_integer:=2;
+  gc_loglevel_debug     constant pls_integer:=3;
+  gc_loglevel_cfg_key   constant  varchar2(20)  := 'LogLevel';
+  gc_loglevel                    pls_integer:=3;   -- current log level
+
+  -- standard log message types
+  --{{ This is rubbish - they are *ALL* events 
+  gc_log_message_event  constant varchar2(5) := 'EVENT';  
+  --}}
+  
+  gc_log_message_info   constant varchar2(5) := 'INFO';
+  gc_log_message_error  constant varchar2(5) := 'ERROR';
+  gc_log_message_warn   constant varchar2(5) := 'WARN';
+  gc_log_message_debug  constant varchar2(5) := 'DEBUG';
+
+  -- key used to retrieve list of log message types to be logged
+  -- defined as a comma delimited list of message types e.g. 'EVENT,ERROR'
+  gc_log_types_cfg_key  constant varchar2(50) := 'Logtypes';
+  gc_log_types                   varchar2(250);    -- current log types to be logged
+
+  -- key used to define whether log messages are written to file, table or output
+  gc_log_target_types_cfg_key   constant varchar2(50) := 'LogTargettypes';
+  gc_log_target_types            varchar2(250);    -- current targets to be logged to
+  gc_log_target_file    constant varchar2(255) := 'FILE';
+  gc_log_target_table   constant varchar2(255) := 'TABLE';
+  gc_log_target_output  constant varchar2(255) := 'OUTPUT';   -- i.e. DBMS_OUTPUT
+  gc_log_target_pipe    constant varchar2(255) := 'PIPE';
+  
+
+  -- key used to define how many days of tables and file log entries are retained online
+  gc_log_months_retained_cfg_key constant varchar2(50) := 'LogTableAge';
+  gc_log_months_retained      pls_integer;
+  -- if no log retention period is defined then this is the default
+  gc_default_months_retained constant pls_integer := 3;
+
+  -- Locking 
+  gc_log_lock_id        constant  pls_integer   :=  10661031;
+  
+  gc_log_dir_cfg_key    constant  varchar2(20)  :=  'LogFileDir';
+  gc_log_dir                      varchar2(80);
+  gc_log_file_cfg_key   constant  varchar2(20)  :=  'LogFileName';
+  gc_log_file                     varchar2(80);
+  gc_log_date_fmt_cfg_key constant  varchar2(20)  :=  'LogDateFormat';
+  gc_log_date_format              varchar2(80);
+
+  -- procedure to write a log message
+  --
+  -- p_message_type defines the level of the log message (event, error, info, debug)
+  -- p_program_name is an optional field to define the logging program (if null then the calling pl/sql subprogram is used)
+  -- p_message_text is the text to be logged
+  -- p_parent_id is an optional identifier of a parent of the log message
+  -- p_parent_table is the optional table of which p_parent_id is a primary key value
+  -- p_sqlcode is the oracle error code (if this is an error log message)
+
+  procedure log(p_message_type in log_message.message_type%type:=null,
+                p_message_text in log_message.message_text%type:=null,
+                p_parent_table in log_message.parent_table%type default null,
+                p_parent_id    in log_message.parent_id%type default null,
+                p_sqlcode      in log_message.error_code%type default null,
+                p_program_name in log_message.program_name%type default null);
+  procedure error(p_sqlcode      in log_message.error_code%type default null);
+  procedure warn (p_sqlcode      in log_message.error_code%type default null);
+  procedure info (p_sqlcode      in log_message.error_code%type default null);
+  procedure debug(p_sqlcode      in log_message.error_code%type default null);
+                
+  -- procedure to purge the log table - deleting entries older than (current date - p_months_retained)
+  procedure purge(p_log_user in log_message.log_user%type default '%');
+
+  -- extracts the calling procedures name and line number where the call was made from the call stack
+  -- ignores the first entry in the callstack as this would generally be the logging procedure
+  function get_program_name(p_callstack in varchar2) return varchar2;
+
+  -- wrapper for log that logs a debug type message prefixed with DEBUG and a timestamp
+  procedure log_debug(p_message_text in varchar2 default null);
+
+end pkg_logger;
+/

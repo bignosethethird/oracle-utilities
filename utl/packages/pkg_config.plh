@@ -1,0 +1,161 @@
+CREATE OR REPLACE PACKAGE utl.pkg_config 
+as
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  Access to system-wide variables.
+--
+--  Allows querying, insertion and updating of system variables.
+--
+--  How system variables work:
+--  ~~~~~~~~~~~~~~~~~~~~~~~~
+--  All system vaiables are provided with a unique, CaSe-InSenSiTiVe name.
+--  Against them can be attributed either an integer, float, date or string value.
+--  The values live in table config in this schema.
+--
+--  DO NOT "BEAUTIFY" THIS CODE !!!!!  
+--  The last time this was 'beautified', it got broken. 
+------------------------------------------------------------------------
+
+--===========================================================================--
+-- GLOBAL SYSTEM-WIDE CONSTANTS
+--===========================================================================--
+pc_package                  constant varchar2(30):=  'pkg_config';
+pc_schema                   constant varchar2(30):=  'utl';
+
+gc_config_key_datetimeformat constant varchar2(30):= 'GUIDateTimeFormat';
+gc_datetime_format          varchar2(30);
+
+-- Adds a variable of one type
+procedure add_variable (
+  p_key                      in       config.variable%type,
+                             -- Mandatory: Name of the system variable being added
+  p_description              in       config.description%type,
+                             -- Mandatory: Description of the variable being added
+  p_integer_val              in       integer:=null,
+                             -- Should be null if variable is not integer
+  p_float_val                in       float:=null,
+                             -- Should be null if variable is not float
+  p_date_val                 in       date:=null,
+                             -- Should be null if variable is not date
+  p_varchar_val              in       varchar2:=null);
+
+-- Adds an INTEGER variable to the configuration table
+procedure add_variable_int (
+  p_key           in config.variable%type,
+  p_integer_val   in integer,
+  p_description   in config.description%type);
+
+-- Adds a FLOAT variable to the configuration table
+procedure add_variable_float (
+  p_key           in config.variable%type,
+  p_float_val     in float,
+  p_description   in config.description%type);
+
+-- Adds a DATE variable to the configuration table
+procedure add_variable_date (
+  p_key           in config.variable%type,
+  p_date_val      in date,
+  p_description   in config.description%type);
+
+-- Adds a VARCHAR2 variable to the configuration table
+procedure add_variable_string (
+  p_key           in config.variable%type,
+  p_varchar_val   in varchar,
+  p_description   in config.description%type);
+
+-- Get an INTEGER variable
+-- Will not override the original value if variable cannot be found
+function get_variable_int (
+  p_key           in config.variable%type,
+  p_integer_val   in out integer
+) return boolean;
+function get_variable_int(p_key in config.variable%type) return integer;
+
+-- Get a FLOAT variable
+-- Will not override the original value if variable cannot be found
+function get_variable_float (
+  p_key           in config.variable%type,
+  p_float_val     in out float)
+return boolean;
+function get_variable_float(p_key in config.variable%type) return float;
+
+-- Get a DATE variable
+-- Will not override the original value if variable cannot be found
+function get_variable_date (
+  p_key           in config.variable%type,
+  p_date_val      in out date)
+return boolean;
+function get_variable_date(p_key in config.variable%type) return date;
+
+-- Get a VARCHAR2 variable
+-- Will not override the original value if variable cannot be found
+function get_variable_string (
+  p_key           in  config.variable%type,
+  p_varchar_val   in out varchar)
+return boolean;
+function get_variable_string(p_key in config.variable%type) return varchar2;
+
+-- Sets an INTEGER variable
+-- All values are by default autonomously committed
+procedure set_variable_int (
+    p_Key in config.variable%type
+  , p_Val in integer
+  , p_change_reason in config.change_reason%type:=null
+  , p_AutoCommit in boolean :=true
+);
+
+-- Sets a FLOAT variable
+-- All values are by default autonomously committed
+procedure set_variable_float (
+    p_Key in config.variable%type
+  , p_Val in float
+  , p_change_reason in config.change_reason%type:=null  
+  , p_AutoCommit in boolean :=true
+);
+
+-- Sets a DATE variable
+-- All values are by default autonomously committed
+procedure set_variable_date (
+    p_Key in config.variable%type
+  , p_Val in date
+  , p_change_reason in config.change_reason%type:=null  
+  , p_AutoCommit in boolean :=true
+);
+
+-- Sets a VARCHAR2 variable
+-- All values are by default autonomously committed
+procedure set_variable_string (
+    p_Key in config.variable%type
+  , p_Val in varchar2
+  , p_change_reason in config.change_reason%type:=null  
+  , p_AutoCommit in boolean :=true  
+);
+
+-- Sets a variable value - assumes same data type as the existing variable's 
+-- data type. 
+-- If the data type is a date, then the date format is assumed to be 'YYYYMMDD HH24:MI'.
+-- If this cannot be determined, then the datatype is assumed to be string.
+procedure set_variable(p_Key in config.variable%type, p_Val in varchar2,p_change_reason in config.change_reason%type);
+
+-- Get the date that a variable was modified
+function get_modified_date (
+  p_key in config.variable%type
+)
+return date;
+
+------------------------------------------------------------------------------
+-- GUI Interface
+------------------------------------------------------------------------------
+function get_count(p_variable  in config.variable%type) return integer;
+function get_list(p_variable  in config.variable%type) return utl.global.t_result_set;
+function get_detail(p_variable  in config.variable%type) return utl.global.t_result_set;
+procedure update_detail(p_variable  in config.variable%type,
+                        p_value   in varchar2,
+                        p_description in varchar2,
+                        p_change_reason in config.change_reason%type);
+
+end pkg_config;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

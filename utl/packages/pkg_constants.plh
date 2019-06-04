@@ -1,0 +1,16 @@
+CREATE OR REPLACE PACKAGE utl.pkg_constants IS
+
+------------------------------------------------------------------------
+--------------------------------------------------------------------------
+--  A package providing some standard constants 
+------------------------------------------------------------------------
+  gc_tab   CONSTANT CHAR(1) := CHR(9);   
+	gc_cr    CONSTANT CHAR(1) := CHR(10);
+	gc_comma CONSTANT CHAR(1) := ',';
+	gc_pipe	 CONSTANT CHAR(1) := '|';
+	gc_equals CONSTANT CHAR(1):= '=';
+  
+  gc_unmapped_key  CONSTANT VARCHAR2(10) := -999;
+  gc_unmapped_desc CONSTANT VARCHAR2(10) := 'undefined';
+END;
+/

@@ -1,0 +1,78 @@
+create or replace package utl.pkg_temp as
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  Temporary table management
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Mandatory in Every Package
+------------------------------------------------------------------------
+pc_package          constant varchar2(30)    := 'pkg_temp';
+pc_schema           constant varchar2(30)    := 'utl';
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Global types
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Global Constants
+------------------------------------------------------------------------
+gl_temp_tables    dbms_sql.varchar2s;
+
+--==================================================================--
+-- Temp Functions
+--==================================================================--
+
+----------------------------------------------------------------------------
+--  Create a "temp" table in the current schema that should be deleted
+--  at the end of the process.
+--  Comma-delimited list req columns in the form e.g.
+--  '"Trader Type" varchar2(30), "Firm" varchar2(30),"Freq" varchar2(10)';
+--  Returns the name of the temp table that was created.
+--  Note:
+--  Does not create an index.
+--
+--  Usage:
+--  begin
+--    v_table_name:=create_temp_table4cols('"Trader Type" varchar2(30), "Badge" varchar2(30), "Freq" varchar2(10)');
+--    ...
+--    execute immediate 'drop table '||v_table_name;
+--  exception
+--    when others then
+--      if(v_table_name is not null)then
+--        execute immediate 'drop table '||v_table_name;
+--      end if;
+--  end;
+----------------------------------------------------------------------------
+function create_temp_table4cols(p_cols  in    varchar2)
+return varchar2;
+
+----------------------------------------------------------------------------
+--  Create a "temp" table in the current schema that should be deleted
+--  at the end of the process.
+--  Returns the name of the temp table that was created.
+--  Note:
+--  Does not create an index.
+--
+--  Usage:
+--  begin
+--    v_table_name:=create_temp_table4tables('traders');
+--    ...
+--    execute immediate 'drop table '||v_table_name;
+--  exception
+--    when others then
+--      if(v_table_name is not null)then
+--        execute immediate 'drop table '||v_table_name;
+--      end if;
+--  end;
+----------------------------------------------------------------------------
+function create_temp_table4tables(p_table_name  in    varchar2)
+return varchar2;
+
+
+end pkg_temp;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

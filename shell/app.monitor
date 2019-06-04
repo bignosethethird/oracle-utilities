@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+# Monitor all the events and output them to stdout.
+# The output is based on what is written to the events error log file
+[[ -z $APP_HOME ]] && printf "\$APP_HOME has not been defined. Exiting...\n" && exit 1
+[[ $1 = --help  || $1 = -h ]] && printf "
+Usage: `basename $0`
+
+Displays VCR Log events to stdout.
+" && exit 0
+
+# kill tailing process
+trap kill -9 %1 > /dev/null 2>&1 && exit INT TERM HUP EXIT
+
+# Start tailing the log file from NOW
+tail -0cf $APP_HOME/log/events &
+while : ; do
+  printf "\n(Hit Ctrl-C to exit)\n"
+  sleep 10
+done
+
+
+

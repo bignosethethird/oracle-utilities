@@ -1,0 +1,147 @@
+create or replace package 
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  Mathematical funcitons utilities
+------------------------------------------------------------------------
+    utl.pkg_math
+as
+------------------------------------------------------------------------
+-- Mandatory in Every Package
+------------------------------------------------------------------------
+pc_package          constant varchar2(30)    := 'pkg_math';
+pc_schema           constant varchar2(30)    := 'utl';
+
+------------------------------------------------------------------------
+-- Global types
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Global Constants
+------------------------------------------------------------------------
+-- Extents
+gc_max_int                        constant pls_integer := 2147483647;
+
+
+-- Numerical constants
+gc_pi                             constant real :=3.14159265358979;
+gc_degrees_per_radian             constant real :=57.2957795130823;
+
+-- Change boolean text to suit national language settings
+gc_str_true                       varchar2(1)   :=  'Y';
+gc_str_false                      varchar2(1)   :=  'N';
+gc_num_true                       pls_integer   :=  1;
+gc_num_false                      pls_integer   :=  0;
+
+
+--==================================================================--
+-- Numerical Conversion Functions
+--==================================================================--
+
+-- Converts decimal to Hex string
+procedure dec2hex( p_in_num in  number, p_out_hex out varchar2);
+pragma restrict_references(dec2hex, WNDS);
+
+-- Converts Hex string to integer
+function hex2int(h varchar2) return pls_integer;
+pragma restrict_references(hex2int, WNDS);
+
+-- Converts integer to Hex string
+function int2hex (n pls_integer) return varchar2;
+pragma restrict_references(int2hex, WNDS);
+
+-- Converts a number to words, and if required, to monatary units and 1/100 units
+-- If not units are specified, the decimal point will revert to the word 'point'.
+-- Parameters:
+-- 1. Number to be converted
+-- 2. Monetary Unit name. e.g. Euros
+-- 3. Monetary Unit 1/100 name. e.g. Cents
+-- Returns a nice English string
+-- e.g. UTL.UTL.dec2words('289767685.489876','Euros','Cents') gives:
+-- two hundred eighty-nine million seven hundred sixty-seven thousand six
+--  hundred eighty-five point four eight nine eight seven-six
+-- In the English language, the last digit is preceded by a hyphen 
+-- or by the word 'and' when the last two digit are between 1 and 19 or the last 
+-- digit is a 0 preceded by a non-0, e.g.1001 --> thousand and one, 
+-- 610 --> six hundred and 10, 716 --> seven hundred and sixteen
+--
+-- Consider this simpler idea, which is limited by the maximum value allowed 
+-- for a julian date (ca. 7 digits):
+--select decode(sign(my_num ), -1, 'Negative ', 0, 'Zero', NULL ) ||
+--       decode(sign(abs(my_num) ), +1, to_char( to_date( abs(my_num),'J'),'Jsp') )
+--from dual
+-- TODO: Make compatible with other codepages
+function dec2words( p_number in number,
+                    p_mon_unit in varchar2 := null,
+                    p_mon_100 in varchar2 := null)
+return varchar2;
+pragma restrict_references(dec2words, RNDS, WNDS);
+
+-- Converts a cardinal number (1,2,3,....) to an ordinal number in 
+-- string form (first, second, third,...)
+-- If the ordinal could not be determined, returns null
+-- TODO: Make compatible with other codepages
+function cardinal2ordinal(p_cardinal in pls_integer) return varchar2;
+
+-- Converts a Boolean value to an acceptable SQL type
+-- TRUE  => 1
+-- FALSE => 0
+function bool2num(p_bool in boolean) return number;
+
+-- Converts a Boolean value to an acceptable SQL type
+-- TRUE  => 'T'
+-- FALSE => 'F'
+function bool2str(p_bool in boolean) return varchar2;
+
+-- Converts an integer to a Boolean value 
+-- 1 => TRUE 
+-- 0 => FALSE 
+function int2bool(p_int in pls_integer) return boolean;
+
+-- Converts a Boolean value to an acceptable SQL type
+-- TRUE  => 'T'
+-- FALSE => 'F'
+function str2bool(p_bool in varchar2) return boolean;
+
+--==================================================================--
+-- Geometric Conversion Functions
+--==================================================================--
+
+-- Converts degrees to radians.
+-- Either specify degree to decimal, or use minutes and seconds with the degree decimal
+function degrees2radians( p_degrees in real,
+                          p_minutes in real:=null,
+                          p_seconds in real:=null)
+return real;
+pragma restrict_references(degrees2radians, RNDS, WNDS);
+
+-- Converts radians to degrees (decimal value only)
+function radians2degrees(p_radians in real)
+return real;
+pragma restrict_references(radians2degrees, RNDS, WNDS);
+
+-- Converts a decimal degree to non-decimal minutes and seconds string
+-- e.g. 50.5 returns 50 deg 30' 0"
+function degreeDec2degreeMS(p_degrees in real)
+return varchar2;
+pragma restrict_references(degreeDec2degreeMS, RNDS, WNDS);
+
+-- Converts degrees, minutes and seconds to a decimal degree
+-- e.g. 50 deg 30' 0" return 50.5
+function degreeMS2degreeDec(p_degrees in real,
+                            p_minutes in real,
+                            p_seconds in real)
+return real;
+pragma restrict_references(degreeMS2degreeDec, RNDS, WNDS);
+
+--==================================================================--
+-- Maths Functions
+--==================================================================--
+
+function min(a pls_integer, b pls_integer) return pls_integer;
+function max(a pls_integer, b pls_integer) return pls_integer;
+
+end pkg_math;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

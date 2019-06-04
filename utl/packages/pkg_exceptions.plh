@@ -1,0 +1,293 @@
+create or replace package utl.pkg_exceptions as
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  A package to define exceptions
+------------------------------------------------------------------------
+
+
+  -- This is the ONLY return code that signifies SUCCESS
+  gc_success constant pls_integer := 0;
+  
+  -- This is the return code that for an error that does not *YET* have an error code assined to it.
+  gc_undefined constant pls_integer := -20999;
+  e_undefined exception;
+  pragma exception_init(e_undefined, -20999);
+  
+  -- This is where our error codes start
+  -- User-defined errors should be in the range of -20000 to -20999, starting at -20000
+  gc_error_boundary constant pls_integer := -20000;
+
+  -- generic exceptions between -20801 and -20899
+  ----------------------------------------------------------------------------
+  gc_multi_cfg_vars_err constant integer := -20801;
+  e_multi_cfg_vars exception;
+  pragma exception_init(e_multi_cfg_vars, -20801);
+
+  gc_cfg_var_exists_err constant integer := -20802;
+  e_cfg_var_exists exception;
+  pragma exception_init(e_cfg_var_exists, -20802);
+
+  gc_smtp_conn_fail_err constant integer := -20803;
+  e_smtp_conn_fail exception;
+  pragma exception_init(e_smtp_conn_fail, -20803);
+
+  gc_smtp_config_missing_err constant integer := -20804;
+  e_smtp_config_missing exception;
+  pragma exception_init(e_smtp_config_missing, -20804);
+
+  gc_email_param_missing_err constant integer := -20805;
+  e_email_param_missing exception;
+  pragma exception_init(e_email_param_missing, -20805);
+
+  gc_compilation_err constant integer := -20806;
+
+----------------------------------------------------------------------------
+-- Scheduler Errors between -20900 to -20998
+----------------------------------------------------------------------------
+  gc_scheduler_inv_mode           constant global.t_error_code := -20902;
+  e_scheduler_inv_mode            exception;
+  pragma exception_init(e_scheduler_inv_mode,-20902);
+
+  gc_scheduler_inv_state          constant global.t_error_code := -20903;
+  e_scheduler_inv_state           exception;
+  pragma exception_init(e_scheduler_inv_state,-20903);
+
+  gc_scheduler_task_not_due       constant global.t_error_code := -20904;
+  e_scheduler_task_not_due        exception;
+  pragma exception_init(e_scheduler_task_not_due,-20904);
+
+  gc_scheduler_task_spec          constant global.t_error_code := -20905;
+  e_scheduler_task_spec           exception;
+  pragma exception_init(e_scheduler_task_spec,-20905);
+
+  gc_scheduler_task_busy          constant global.t_error_code := -20906;
+  e_scheduler_task_busy           exception;
+  pragma exception_init(e_scheduler_task_busy,-20906);
+
+  gc_scheduler_task_broken        constant global.t_error_code := -20907;
+  e_scheduler_task_broken         exception;
+  pragma exception_init(e_scheduler_task_broken,-20907);
+
+  gc_scheduler_task_submit        constant global.t_error_code := -20908;
+  e_scheduler_task_submit         exception;
+  pragma exception_init(e_scheduler_task_submit,-20908);
+
+  gc_scheduler_task_timeout       constant global.t_error_code := -20909;
+  e_scheduler_task_timeout        exception;
+  pragma exception_init(e_scheduler_task_timeout,-20909);
+
+  gc_scheduler_inv_date           constant global.t_error_code := -20910;
+  e_scheduler_inv_date            exception;
+  pragma exception_init(e_scheduler_inv_date,-20910);
+
+  gc_scheduler_tokenize           constant global.t_error_code := -20911;
+  e_scheduler_tokenize            exception;
+  pragma exception_init(e_scheduler_tokenize,-20911);
+
+  gc_scheduler_task_long          constant global.t_error_code := -20912;
+  e_scheduler_task_long           exception;
+  pragma exception_init(e_scheduler_task_long,-20912);
+
+  gc_scheduler_task_exist         constant global.t_error_code := -20913;
+  e_scheduler_task_exist          exception;
+  pragma exception_init(e_scheduler_task_exist,-20913);
+
+  gc_scheduler_task_resume        constant global.t_error_code := -20914;
+  e_scheduler_task_resume         exception;
+  pragma exception_init(e_scheduler_task_resume,-20914);
+
+  gc_scheduler_task_lost          constant global.t_error_code := -20915;
+  e_scheduler_task_lost           exception;
+  pragma exception_init(e_scheduler_task_lost,-20915);
+
+  gc_scheduler_task_add           constant global.t_error_code := -20916;
+  gc_scheduler_task_add           exception;
+  pragma exception_init(gc_scheduler_task_add,-20916);
+
+  gc_scheduler_task_suspend       constant global.t_error_code := -20917;
+  e_scheduler_task_suspend        exception;
+  pragma exception_init(e_scheduler_task_suspend,-20917);
+
+  gc_scheduler_task_makedue       constant global.t_error_code := -20918;
+  e_scheduler_task_makedue        exception;
+  pragma exception_init(e_scheduler_task_makedue,-20918);
+
+  gc_scheduler_task_disable       constant global.t_error_code := -20919;
+  e_scheduler_task_disable        exception;
+  pragma exception_init(e_scheduler_task_disable,-20919);
+
+  gc_scheduler_task_edit_lock     constant global.t_error_code := -20920;
+  e_scheduler_task_edit_lock      exception;
+  pragma exception_init(e_scheduler_task_edit_lock,-20920);
+
+  gc_scheduler_task_edit_user     constant global.t_error_code := -20921;
+  e_scheduler_task_edit_user      exception;
+  pragma exception_init(e_scheduler_task_edit_user,-20921);
+
+  gc_scheduler_task_edit_abandon  constant global.t_error_code := -20922;
+  e_scheduler_task_edit_abandon   exception;
+  pragma exception_init(e_scheduler_task_edit_abandon,-20922);
+
+  gc_scheduler_task_not_edit      constant global.t_error_code := -20923;
+  e_scheduler_task_not_edit       exception;
+  pragma exception_init(e_scheduler_task_not_edit,-20923);
+
+  gc_scheduler_next_due_date      constant global.t_error_code := -20924;
+  e_scheduler_next_due_date       exception;
+  pragma exception_init(e_scheduler_next_due_date,-20924);
+
+  gc_scheduler_sub_process        constant global.t_error_code := -20925;
+  e_scheduler_sub_process         exception;
+  pragma exception_init(e_scheduler_sub_process,-20925);
+  
+  gc_scheduler_dbms_job_fail      constant global.t_error_code := -20926;
+  e_scheduler_dbms_job_fail       exception;
+  pragma exception_init(e_scheduler_dbms_job_fail,-20926);
+
+  gc_scheduler_task_fail          constant global.t_error_code := -20927;
+  e_scheduler_task_fail           exception;
+  pragma exception_init(e_scheduler_task_fail,-20927);  
+
+  gc_scheduler_trancient_state    constant global.t_error_code := -20928;
+  e_scheduler_trancient_state     exception;
+  pragma exception_init(e_scheduler_trancient_state,-20928);  
+
+  gc_scheduler_failure            constant global.t_error_code := -20929;
+  e_scheduler_failure             exception;
+  pragma exception_init(e_scheduler_failure,-20929);  
+
+  gc_scheduler_task_abort         constant global.t_error_code := -20930;
+  e_scheduler_task_abort          exception;
+  pragma exception_init(e_scheduler_task_abort,-20930);  
+
+  gc_scheduler_state_lock         constant global.t_error_code := -20931;
+  e_scheduler_state_lock          exception;
+  pragma exception_init(e_scheduler_state_lock,-20931);  
+
+  gc_scheduler_user_operation     constant global.t_error_code := -20932;
+  e_scheduler_user_operation      exception;
+  pragma exception_init(e_scheduler_user_operation,-20932);  
+
+  gc_scheduler_special_day        constant global.t_error_code := -20933;
+  e_scheduler_special_day         exception;
+  pragma exception_init(e_scheduler_special_day,-20933);  
+
+  gc_scheduler_circular_ref        constant global.t_error_code := -20934;
+  e_scheduler_circular_ref         exception;
+  pragma exception_init(e_scheduler_circular_ref,-20934);  
+
+  gc_scheduler_peer_task          constant global.t_error_code := -20935;
+  e_scheduler_peer_task           exception;
+  pragma exception_init(e_scheduler_peer_task,-20935);  
+
+  gc_scheduler_peer_group         constant global.t_error_code := -20936;
+  e_scheduler_peer_group          exception;
+  pragma exception_init(e_scheduler_peer_task,-20936);  
+ 
+  gc_scheduler_task_forward       constant global.t_error_code := -20937;
+  e_scheduler_task_forward        exception;
+  pragma exception_init(e_scheduler_task_forward,-20937);  
+
+  ------------------------------------------------------------------------
+  --  VCR Process exceptions between -20100 and -20299
+  ------------------------------------------------------------------------
+  gc_source_is_loading_err constant integer := -20100;
+  e_source_is_loading exception;
+  pragma exception_init(e_source_is_loading, -20100);
+
+  gc_no_subpartition_err constant integer := -20101;
+  e_no_subpartition exception;
+  pragma exception_init(e_no_subpartition, -20101);
+
+  gc_no_admin_email_err constant integer := -20102;
+  e_no_admin_email exception;
+  pragma exception_init(e_no_admin_email, -20102);
+
+  gc_no_ie_email_err constant integer := -20105;
+  e_no_ie_email exception;
+  pragma exception_init(e_no_ie_email, -20105);
+
+  gc_no_ie_platform_email_err constant integer := -20106;
+  e_no_ie_platform_email exception;
+  pragma exception_init(e_no_ie_platform_email, -20106);
+
+  gc_no_source_email_err constant integer := -20107;
+  e_no_source_email exception;
+  pragma exception_init(e_no_source_email, -20107);
+
+  gc_no_hd_sys_cfg_err constant integer := -20108;
+  e_no_hd_sys_cfg exception;
+  pragma exception_init(e_no_hd_sys_cfg, -20108);
+
+  gc_incident_desc_missing_err constant integer := -20109;
+  e_incident_desc_missing exception;
+  pragma exception_init(e_incident_desc_missing, -20109);
+
+  gc_no_support_email_err constant integer := -20110;
+  e_no_support_email exception;
+  pragma exception_init(e_no_support_email, -20110);
+
+  gc_load_not_in_progress_err constant integer := -20111;
+  e_load_not_in_progress exception;
+  pragma exception_init(e_load_not_in_progress, -20111);
+
+  gc_ie_ins_type_err constant integer := -20112;
+  e_ie_ins_type exception;
+  pragma exception_init(e_ie_ins_type, -20112);
+
+  gc_no_change_reason constant integer := -20113;
+  e_no_change_reason exception;
+  pragma exception_init(e_no_change_reason, -20113);
+  
+  gc_no_load_run_err constant integer := -20114;
+  e_no_load_run exception;
+  pragma exception_init(e_no_load_run, -20114);
+
+  gc_bb_timeout_err constant integer := -20115;
+  e_bb_timeout exception;
+  pragma exception_init(e_bb_timeout, -20115);
+  
+  gc_bb_format_err constant integer := -20116;
+  e_bb_format exception;
+  pragma exception_init(e_bb_format, -20116);
+  
+  gc_report_req_exists constant integer := -20117;
+  e_rep_req_exists exception;
+  pragma exception_init(e_rep_req_exists, -20117);
+  
+  gc_datapool_if_error constant integer := -20118;
+  e_datapool_if_error exception;
+  pragma exception_init(e_datapool_if_error, -20118);
+  
+  gc_lim_date_err constant integer := -20119;
+  e_lim_date exception;
+  pragma exception_init(e_lim_date, -20119);
+  
+  gc_lim_close_err constant integer := -20120;
+  e_lim_close exception;
+  pragma exception_init(e_lim_close, -20120);  
+  
+  gc_lim_dupe_err constant integer := -20121;
+  e_lim_duplicate exception;
+  pragma exception_init(e_lim_duplicate, -20121);  
+
+  gc_field_mapped_err constant integer := -20122;
+  e_field_mapped exception;
+  pragma exception_init(e_field_mapped, -20122);    
+  
+  gc_no_source_address_err constant integer := -20123;
+  e_no_source_address exception;
+  pragma exception_init(e_no_source_address, -20123);    
+----------------------------------------------------------------------------
+-- VCR Userface Errors between -20300 to -20399
+----------------------------------------------------------------------------
+  gc_incomplete_adhoc_params      constant global.t_error_code := -20300;
+  e_incomplete_adhoc_params       exception;
+  pragma exception_init(e_incomplete_adhoc_params,-20300);
+  
+  gc_host_command_err constant integer := -20301;
+  e_host_command exception;
+  pragma exception_init(e_host_command, -20301);
+
+end pkg_exceptions;
+/

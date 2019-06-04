@@ -1,0 +1,67 @@
+CREATE OR REPLACE PACKAGE utl.pkg_errorhandler IS
+  ------------------------------------------------------------------------
+  --------------------------------------------------------------------------
+  --  A package to capture and log error information, optionally raising helpdesk incidents
+  ------------------------------------------------------------------------
+
+  pc_package CONSTANT VARCHAR2(30) := 'pkg_errorhandler';
+  pc_schema  CONSTANT VARCHAR2(30) := 'utl';
+
+  --  handle should be called in the exception block of any function or procedure
+  --  where the call/error stack of any error and the error code should be retained.
+  --  it stores the error information in global variables
+  --  and retains it until it has been logged by log_sqlerror
+  --  until log_sqlerror is called handle will not overwrite this information
+  -- 
+  procedure handle;
+
+  -- this routine logs a handled sql error
+  --
+  -- it should be called at the point the error information should be logged
+  -- e.g. in the main controlling function or procedure called from the scheduler
+  -- any subsequent call in that session will not log an error unless handle is called again
+  -- 
+  -- this routine will by default raise a helpdesk incident
+  -- the optional parent table parameters allow the log entry to be related to some other item 
+  -- such as a VCR source_load_run 
+  
+  procedure log_sqlerror(p_parent_table IN log_message.parent_table%TYPE DEFAULT NULL,
+                         p_parent_id    IN log_message.parent_table%TYPE DEFAULT NULL,
+                         p_incident     IN BOOLEAN DEFAULT TRUE);
+
+  -- this routine logs an error as defined by the parameters p_error_code and p_error_message
+  --
+  -- the optional parent table parameters allow the log entry to be related to some other item 
+  -- this routine will by default raise a helpdesk incident
+  -- it is called by log_sqlerror, for non-sql errors it should be called directly
+  procedure log_error(p_error_code    IN log_message.ERROR_CODE%TYPE,
+                      p_error_message IN log_message.message_text%TYPE,
+                      p_parent_table  IN log_message.parent_table%TYPE DEFAULT NULL,
+                      p_parent_id     IN log_message.parent_table%TYPE DEFAULT NULL,
+                      p_incident      IN BOOLEAN DEFAULT TRUE);
+
+  ------------------------------------------------------------------------
+  --  Get complete description: error message and error explanation
+  function code2desc(p_error_code  IN error_codes.ERROR_CODE%TYPE,
+                     p_message     OUT error_codes.message%TYPE,
+                     p_explanation OUT error_codes.explanation%TYPE)
+    return utl.global.t_error_code;
+  procedure code2desc(p_error_code  IN error_codes.ERROR_CODE%TYPE,
+                     p_message     OUT error_codes.message%TYPE,
+                     p_explanation OUT error_codes.explanation%TYPE);
+    
+  ------------------------------------------------------------------------
+  -- Is the error code a success (i.e. >= 0) ? --> returns true
+  function is_success(p_code IN PLS_INTEGER) return BOOLEAN;
+
+  ------------------------------------------------------------------------
+  -- Is the error code a failure? --> returns true
+  function is_error(p_code IN PLS_INTEGER) return BOOLEAN;
+  
+  -- returns error explanation
+  function get_explanation(p_error_code IN error_codes.ERROR_CODE%TYPE) return error_codes.explanation%TYPE;
+  
+  -- returns error message
+  function get_message(p_error_code IN error_codes.ERROR_CODE%TYPE) return error_codes.message%TYPE;
+END;
+/

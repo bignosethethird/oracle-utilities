@@ -1,0 +1,79 @@
+create or replace package
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  System functions: Database Analysis and Repair and Diagnostics
+------------------------------------------------------------------------
+ utl.pkg_system AUTHID CURRENT_USER AS
+
+
+
+------  DO NOT "BEAUTIFY" THIS CODE !!!!!  ------------------
+
+
+
+  -- number of days between statistics being gathered for a table
+  gc_analyze_frequency constant integer := 7;
+  ------------------------------------------------------------------------
+  -- Build Operations
+  ------------------------------------------------------------------------
+
+  -- Recompiles all packages/procedures/functions and views in the schema list
+  -- until it there is no change in the over all compilation status
+  procedure compile_all(p_schemas IN varchar2 := NULL);
+
+  ------------------------------------------------------------------------
+  -- Maintenance Operations
+  ------------------------------------------------------------------------
+
+  -- Analyzes all schemas specified in system variable "Analyze Schemas".
+  procedure analyze_schemas(p_schemas IN varchar2);
+
+  -- Maintenance Operation
+  -- Coalesces all tablespaces specified in system variable "Tables Spaces".
+  procedure coalesce_tablespaces;
+
+  -- Removes Duplicate records from a table
+  -- This procedure requires full table scans, so care must be taken
+  -- when using this procedure on very large tables.
+  procedure remove_dup_records(p_table_name IN varchar2 -- Table name, optionally including schema name
+                               );
+
+  ------------------------------------------------------------------------
+  -- DDL Operations
+  ------------------------------------------------------------------------
+
+  -- Truncate table p_schema.p_table
+  procedure truncate_table(p_schema IN all_tables.owner%TYPE,
+                           p_table  IN all_tables.table_name%TYPE);
+
+  -- Disable all foreign key constraints where p_ref_schema.p_ref_constraint
+  -- is the referenced entity
+  procedure disable_fk(p_ref_schema     IN sys.all_constraints.r_owner%TYPE,
+                       p_ref_constraint IN sys.all_constraints.r_constraint_name%TYPE);
+
+  -- Disable all foreign key constraints where p_ref_schema.p_ref_constraint
+  -- is the referenced entity.
+  procedure enable_fk(p_ref_schema     IN all_constraints.r_owner%TYPE,
+                      p_ref_constraint IN all_constraints.r_constraint_name%TYPE);
+
+  -- Attempts to commit a number to times before abandoning the attempt.
+  procedure safe_commit(p_max_retry IN PLS_integer := 10);
+
+  -- Get the path name for a directory object.
+  -- returns NULL of invalid DIRECTORY object specified.
+  function get_directory_path(p_directory IN varchar2) return varchar2;
+
+  -- Gets the Server Name
+  function get_server_name return varchar2;
+
+  -- Gets the Instance Name
+  function get_instance_name return varchar2;
+
+  -- Get the current O/S user
+  function get_current_osuser return varchar2;
+
+end pkg_system;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

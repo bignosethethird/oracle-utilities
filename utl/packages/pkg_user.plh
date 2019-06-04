@@ -1,0 +1,14 @@
+CREATE OR REPLACE PACKAGE 
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  Functions to provide user related information
+------------------------------------------------------------------------
+ utl.pkg_user AUTHID CURRENT_USER AS
+  -- returns a comma delimited list of all the roles the current user has
+  FUNCTION get_roles RETURN VARCHAR2;
+  
+END pkg_user;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/

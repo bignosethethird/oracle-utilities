@@ -1,0 +1,16 @@
+CREATE OR REPLACE PACKAGE utl.pkg_helpdesk IS
+
+  ------------------------------------------------------------------------
+  --------------------------------------------------------------------------
+  --  A package to create helpdesk incidents
+  ------------------------------------------------------------------------
+
+  PROCEDURE create_incident(p_summary  IN VARCHAR2,
+                            p_desc     IN VARCHAR2,
+                            p_urgency  IN VARCHAR2 DEFAULT NULL,
+                            p_category IN VARCHAR2 DEFAULT NULL,
+                            p_type     IN VARCHAR2 DEFAULT NULL,
+                            p_item     IN VARCHAR2 DEFAULT NULL,
+                            p_logger   IN VARCHAR2 DEFAULT NULL);
+END;
+/

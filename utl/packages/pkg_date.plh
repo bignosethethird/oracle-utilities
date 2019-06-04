@@ -1,0 +1,262 @@
+create or replace package
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+--  Utilities for date manipulation
+------------------------------------------------------------------------
+    utl.pkg_date
+as
+
+------------------------------------------------------------------------
+-- Mandatory in Every Package
+------------------------------------------------------------------------
+pc_package          constant varchar2(30)    := 'pkg_date';
+pc_schema           constant varchar2(30)    := 'utl';
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Global Constants
+------------------------------------------------------------------------
+
+-- CHARACTER DEFINITIONS
+gc_quote                          constant varchar2(1)  := '''';     -- Single quote
+gc_space                          constant varchar2(1)  := ' ';      -- Space
+
+-- DATE VALUES
+gc_date_mask                      constant varchar2(11) := 'DD-MON-YYYY';
+gc_time_mask                      constant varchar2(10) := 'HH24:MI:SS';
+gc_date_time_mask                 constant varchar2(22) := gc_date_mask||gc_space||gc_time_mask;
+gc_ssm_mask                       constant varchar2(5)  := 'SSSSS';            -- Seconds since midnight
+gc_julian_mask                    constant varchar2(7)  := 'J.'||gc_ssm_mask;  -- Use for numeric absolute date
+gc_date_num_mask                  constant varchar2(8)  := 'YYYYMMDD';
+gc_time_num_mask                  constant varchar2(8)  := 'HH24MISS';
+
+-- SECONDS
+gc_secs_per_min                   constant pls_integer  := 60;
+gc_secs_per_hour                  constant pls_integer  := 60*gc_secs_per_min;
+gc_secs_per_day                   constant pls_integer  := 24*gc_secs_per_hour;
+
+-- Minutes
+gc_mins_per_hour                  constant pls_integer  := 60;
+gc_mins_per_day                   constant pls_integer  := 60*24;
+
+-- Hours
+gc_hours_per_day                  constant pls_integer  := 24;
+
+-- Delimiter for fields
+gc_field_delimiter                constant varchar2(1)  := '|';
+
+-- Extents
+gc_max_int                        constant pls_integer  := 2147483647;
+
+-- DATE LIMITS
+
+-- SYSTEM EPOCH  This value reflectas the 'begining of time' of this system
+gc_system_epoch                   constant date         := to_date('20040101000000','YYYYMMDDHH24MISS');
+gc_julian_epoch                   constant pls_integer  := to_number(to_char(gc_system_epoch, gc_julian_mask));
+-- Earliest date in Unix
+gc_base_date                      constant date         := to_date('01011990','DDMMYYYY');
+-- Julian earliest date expected - this is numeric
+gc_julian_base                    constant pls_integer  := to_number(to_char(gc_base_date, gc_julian_mask));
+-- Notional dates for sql queries
+gc_mindate                        constant date         := to_date('01010001','DDMMYYYY');
+gc_maxdate                        constant date         := to_date('31129999','DDMMYYYY');
+
+--==================================================================--
+-- DATE ANDS TIME FUNCTIONS
+--==================================================================--
+
+------------------------------------------------------------------------
+-- Return minimum date of year i.e. 01-JAN-YYYY 00:00:00 .
+------------------------------------------------------------------------
+function minimum_year_date(p_date in date) return date;
+pragma restrict_references(minimum_year_date, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return maximum date of year i.e. 31-DEC-YYYY 23:59:59 .
+------------------------------------------------------------------------
+function maximum_year_date(p_date in date) return date;
+pragma restrict_references(maximum_year_date, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Is the date a leap year
+------------------------------------------------------------------------
+function is_leap_year(p_date in date) return boolean;
+pragma restrict_references(is_leap_year, WNDS, WNPS);
+function is_leap_year(p_year in number) return boolean;
+pragma restrict_references(is_leap_year, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return year the last time this month occurred, based on present
+-- Example: If today is 10MAY1999, the last year in which JUNE occurred was 1998
+------------------------------------------------------------------------
+function last_month_year(p_month in number) return number;
+pragma restrict_references(last_month_year, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return the first day of the month for a given date
+-- Example: If today is 10MAY1999, the returned date is 01MAY1999 00:00:00
+------------------------------------------------------------------------
+function first_second_month(p_date in date) return date;
+pragma restrict_references(first_second_month, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return the last day of the month for a given date
+-- Similar to Oracle's LAST_DAY function, except that this provides the latest
+-- time point in the day : 23:59:59.
+-- Example: If today is 10MAY1999, the returned date is 31MAY1999 23:59:59
+------------------------------------------------------------------------
+function last_second_month(p_date in date) return date;
+pragma restrict_references(last_second_month, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return the first time point of the day for a given date
+-- Example: If today is 10MAY1999, the returned date is 10MAY1999 00:00:00
+------------------------------------------------------------------------
+function first_second_day(p_date in date) return date;
+pragma restrict_references(first_second_day, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return the last time point of the day for a given date
+-- Example: If today is 10MAY1999, the returned date is 10MAY1999 23:59:59
+------------------------------------------------------------------------
+function last_second_day(p_date in date) return date;
+pragma restrict_references(last_second_day, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Return the first time point of the hour in a given date
+-- Example: If today is 10MAY1999 05:46, the returned date is 10MAY1999 05:00:00
+------------------------------------------------------------------------
+function first_second_hour(p_date in date) return date;
+pragma restrict_references(first_second_hour, WNDS, WNPS);
+------------------------------------------------------------------------
+-- Return the last time point of the hour in a given date
+-- Example: If today is 10MAY1999 05:46, the returned date is 10MAY1999 05:59:59
+------------------------------------------------------------------------
+function last_second_hour(p_date in date) return date;
+pragma restrict_references(last_second_hour, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Is this date the first of the month ?
+------------------------------------------------------------------------
+function is_first_month_day(p_date in date) return boolean;
+pragma restrict_references(is_first_month_day, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Is this date the last of the month ?
+------------------------------------------------------------------------
+function is_last_month_day(p_date in date) return boolean;
+pragma restrict_references(is_last_month_day, WNDS, WNPS);
+
+-- Get national language independent ordinal day of the week, such
+-- that Monday = 1, Tuesday = 2, ... Sunday =7
+function day_of_week(p_date in date) return pls_integer;
+pragma restrict_references(day_of_week, WNDS, WNPS);
+
+-- Get UNIX-style ordinal day of the week, such
+-- that Monday = 1, Tuesday = 2, ... Saturday=6, Sunday =0
+function unix_day_of_week(p_date in date) return pls_integer;
+pragma restrict_references(unix_day_of_week, WNDS, WNPS);
+
+------------------------------------------------------------------------
+-- Is p_date a "week day" ? e.g. Monday, Tuesday...Friday
+------------------------------------------------------------------------
+function is_week_day(p_date in date) return boolean;
+pragma restrict_references(is_week_day, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate seconds since midnight as an integer from current time
+----------------------------------------------------------------------
+function seconds_since_midnight(p_date in date) return pls_integer;
+pragma restrict_references(seconds_since_midnight, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate days since specified date from current time.
+-- Example: days_since_date(yesterday) = 1
+----------------------------------------------------------------------
+function days_since_date(p_date in date) return pls_integer;
+pragma restrict_references(days_since_date, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of whole weeks to the date.
+----------------------------------------------------------------------
+function add_weeks(p_date in date, p_weeks in pls_integer) return date;
+pragma restrict_references(add_weeks, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of months to the date.
+-- Where the resulting month does not accomodate the number of days,
+-- the day value is reduced.
+-- This is probably the most natural way in which one would want to
+-- increment a date by a month
+--
+-- Example: add_months_shrink('20FEB2001',2) = '20APR2001' (added 2 months)
+--          add_months_shrink('28FEB2001',2) = '28APR2001' (added 2 months)
+--          add_months_shrink('31JAN2001',1) = '28FEB2001' (added 1 month but shrunk to fit in month)
+--          add_months_shrink('28FEB2001',1) = '28MAR2001' (added  months)
+--
+-- This function behaves differently to Oracle's add_months, which is:
+-- SQL> select add_months(to_date('28FEB2005'),1) from dual;
+-- ---------
+-- 31-MAR-05
+function add_months_shrink(p_date in date, p_months in pls_integer) return date;
+pragma restrict_references(add_months_shrink, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of whole months to the date.
+-- Adding a month to a the end date of a short month may return a date two
+-- months hence:
+--
+-- Example: add_whole_months('20FEB2001',2) = '20APR2001' (added 28 days of FEB and 31 days of MAR)
+--          add_whole_months('28FEB2001',2) = '28APR2001' (added 28 days of FEB and 31 days of MAR)
+--          add_whole_months('31JAN2001',1) = '02MAR2001' (added 31 days of Jan)
+function add_whole_months(p_date in date, p_months in pls_integer) return date;
+pragma restrict_references(add_whole_months, WNDS, WNPS);
+
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of years to the date.
+-- Where the resulting year does not accomodate the number of days,
+-- the day value is reduced.
+-- This is probably the most natural way in which one would want to
+-- increment a date by one year.
+--
+-- Example: add_years_shrink('20FEB2001',1) = '20FEB2002' (added 1 year)
+--          add_years_shrink('29FEB2004',4) = '28FEB2008' (added 4 years)
+--
+function add_years_shrink(p_date in date, p_years in pls_integer) return date;
+pragma restrict_references(add_years_shrink, WNDS, WNPS);
+
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of hours to the date
+function add_hours_shrink(p_date in date, p_hours in pls_integer) return date;
+pragma restrict_references(add_hours_shrink, WNDS, WNPS);
+
+----------------------------------------------------------------------
+-- Calculate the date after adding a number of minutes to the date
+function add_minutes_shrink(p_date in date, p_minutes in pls_integer) return date;
+pragma restrict_references(add_minutes_shrink, WNDS, WNPS);
+
+
+FUNCTION get_weekday(p_current_date IN DATE, p_direction IN INTEGER) RETURN DATE;
+
+
+----------------------------------------------------------------------
+-- Calculate the first 'working' day of the month from current time
+-- Example: check_fwdom(SYSDATE) returns the date of the first working day
+-- of the month
+----------------------------------------------------------------------
+
+FUNCTION check_fwdom(p_date IN date) RETURN DATE;
+
+-- calculates the weekday p_direction days in advance or previous to p_current_date
+function calc_weekday(p_current_date in date, p_direction in integer) return date;
+
+-- Return days on month
+function days_in_month(p_month in pls_integer, p_year in pls_integer:=to_char(sysdate,'YYYY')) return pls_integer;
+
+end pkg_date;
+------------------------------------------------------------------------
+-- end of file
+------------------------------------------------------------------------
+/
